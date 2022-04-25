@@ -1,0 +1,448 @@
+---
+title: | 
+  |  \huge Econometric Methods:
+  |  Solutions to Empirical Exercise 8.2
+  |  Chapter 8: Non-Linear Regression Functions 
+  |  Stock \& Watson, 3$^{rd}$ Edition
+author: 
+- \Large Zaeen de Souza\footnote{}
+- \Large  Deepti Goel\footnote{\footnotesize Solution key prepared jointly by Zaeen and Deepti. R code and presentation in Rmarkdown by Zaeen.}
+date: | 
+  |
+  | Azim Premji University
+  | `r format(Sys.time(), '%d %B %Y')`
+output: pdf_document
+latex_engine: pdflatex
+fontsize: 11pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{amsmath}
+- \usepackage{dcolumn}
+- \usepackage{lscape}
+- \usepackage{xcolor}
+- \usepackage{graphicx}
+- \usepackage{mathpazo}
+- \usepackage{domitian}
+- \usepackage{subcaption}
+urlcolor: blue
+linkcolor: blue
+---
+
+```{r setup, include=FALSE}
+# in case these are not installed - uncomment and then run.
+# install.packages("readxl")
+# install.packages("ggplot2")
+
+# Loading excel files
+library(readxl)
+
+# Making graphs
+library(ggplot2)
+library(ggthemes)
+library(stargazer)
+library(patchwork)
+my_theme <- function(base_size = 12,
+                     base_family = "") {
+  theme_minimal(base_size = base_size,
+                base_family = base_family) %+replace%
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y  =  element_line(
+        colour = "#c9c0b7",
+        linetype = "dotted",
+        size = 0.5),
+      axis.ticks = element_line(size = .5, colour = "#c9c0b7"),
+      axis.ticks.x = element_blank(),
+      axis.line = element_line(
+        size = 0.5,
+        colour = "#c9c0b7",
+        linetype = "solid"),
+      axis.line.y = element_blank(),
+      axis.text.y = element_text(colour = "black", 
+                                 margin = margin(r = 2), 
+                                 hjust = 1),
+      axis.text.x = element_text(colour = "black"),
+      legend.title = element_blank(),
+      complete = TRUE)
+}
+
+theme_set(my_theme(base_size = 10))
+mypink <- "#e95984"
+mypurple <- "#b649ff"
+cseblue <- "#16926d"
+
+# Setting working directory
+setwd("C:/Users/admin/cse Dropbox/Zaeen de Souza/Files From Deepti/Problem Sets - Latex, Code, Rmd/econometric-methods/Chapters/Chapter 8 Nonlinear Regression Fnts/Dataset")
+
+# Loading the data as 'pset_data'
+pset_data1 <- read_excel("cps12.xlsx")
+pset_data2 <- read_excel("cps92_12.xlsx")
+```
+
+\newpage
+\tableofcontents
+\newpage
+
+# Background: Empirical Exercise 8.2
+
+These are the solutions to **E8.2** from **Chapter 8** of \textit{Introduction to Econometrics (Updated Third edition)} by Stock \& Watson. You should have the following on your computer in order to check answers/run the code and follow the questions in this assignment:
+
+
+-   An updated version of `R` and `Rstudio`.
+-   The following packages installed: 
+    - `ggplot2`
+    - `readxl`
+    - `stargazer`
+    - `dplyr`
+-   The datasets called `CPS92_12, CPS12`.
+-   The data description pdf to understand the variables being used.
+- For this problem set, we will start presenting regression output as formatted tables, instead of raw `R` output.
+
+# Reading guide
+All the code needed to complete the assignments is within this document. R code will be in a grey box and will look like this:
+```{r, eval=F, echo=T}
+summary(iris)
+```
+
+And all R output i.e what R shows you once you run some code, will have `#` signs next to it, and will look like this:
+
+```{r, eval=T, echo=F}
+summary(iris$Sepal.Length)
+```
+As far as possible these guides will show the \textbf{exact output} that comes from running code in `R`, and at times will use formatted tables made in latex. The results themselves, will be identical. Some things to note, that might make output look different accross different computers:
+
+- R reports things like p-values using scientific notation, but some computers report the numbers with many trailing zeros.
+
+- If you have an old version of `R` or `Rstudio` it is highly recommended that you update it using the following code:
+
+```{r, eval=F, echo=TRUE}
+# Use this to update R from within RStudio
+install.packages("installr")
+library(installr)
+# This last command, will open up a download prompt; choose yes/no accordingly.
+updateR()
+```
+
+For updating `Rstudio`, un-install your version of `RStudio`, and download a fresh version from the `RStudio` website.
+\newpage
+
+# Loading the data and libraries
+
+The following code sets the working directory to the folder where you have downloaded the data, loads the libraries needed fo the assignment and loads the excel dataset.
+
+```{r, eval=F, echo=TRUE}
+# Loading excel files
+library(readxl)
+# Making graphs
+library(ggplot2) 
+
+# Setting working directory - this is unique to your computer
+setwd("~Zaeen de Souza/Chapter 8 Nonlinear Regression Fnts")
+
+# Loading the data as 'pset_data1' and 'pset_data2'
+pset_data1 <- read_excel("CPS12.xlsx")
+pset_data2 <- read_excel("CPS92_12.xlsx")
+```
+
+# E8.2 Problem Context
+On the text website www.pearsonglobaleditions.com/Stock_Watson you will find a data file CPS12, which contains data for full-time, full-year workers, ages 25–34, with a high school diploma or B.A./B.S. as their highest degree. A detailed description is given in CPS12_Description, also available on the website. (These are the same data as in CPS92_12, used in Empirical Exercise 3.1, but are limited to the year 2012.) In this exercise, you will investigate the relationship between a worker’s age and earnings. (Generally, older workers have more job experience, leading to higher productivity and higher earnings.)
+
+
+\newpage
+
+# Exercise E8.2
+
+## a. Run a regression of average hourly earnings (AHE) on age (Age), gender (Female), and education (Bachelor). If Age increases from 25 to 26, how are earnings expected to change? If Age increases from 33 to 34, how are earnings expected to change?
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_a <- lm(ahe ~ age + female + bachelor, data = pset_data1)
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_a,
+title = "Exercise E8.2 a",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+
+Since we are modelling earnings as a *linear* function of age and other variables, the effect of a one unit (year) increase in age on earnings is the same at every level of age. In this example, if age were to increase from 25 to 26, earnings are predicted to increase by $0.51$ USD per hour\footnote{Please note that wages and earnings/income are all flow (not stock) concepts. You should therefore always remember to include the time dimension whenever you talk about them. Sadly, many people have become sloppy and do not follow this practice.}. This is the same if age increases from 33 to 34. You can verify this in the following way:
+
+$$
+\widehat{\Delta earnings} = 0.51 \cdot (26-25)= 0.51
+$$
+$$
+\widehat{\Delta earnings} = 0.51 \cdot (34-33) = 0.51
+$$
+
+\newpage 
+
+## b. Run a regression of the logarithm of average hourly earnings, ln(AHE), on Age, Female, and Bachelor. If Age increases from 25 to 26, how are earnings expected to change? If Age increases from 33 to 34, how are earnings expected to change?
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_b <- lm(log(ahe) ~ age + female + bachelor, data = pset_data1)
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_b,
+title = "Exercise E8.2 b",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+
+This is a log linear specification of the model. If age increases from 25 to 26, earnings are predicted to increase by $2.6\%$\footnote{Recall that in the log linear model: $ln(Y)_i = \alpha + \beta_1 X_i + \varepsilon_i$, $\beta_1$ is to be interpreted as follows: A unit change in $X$, is associated with a $(\beta_1 \cdot 100)$ \% change in $Y$.}. If age increases from 33 to 34, earnings are expected to change by $2.6\%$. This is because the regression is linear in age. You can verify this in the following way:
+
+$$
+\widehat{\Delta ln(earnings)} \approx \frac{\Delta Earnings}{Earnings} = 0.0255 \cdot (26-25)= 0.0255
+$$
+$$
+\widehat{\Delta ln(earnings)} \approx \frac{\Delta Earnings}{Earnings} = 0.0255 \cdot (34-33)= 0.0255
+$$
+
+\newpage
+
+## c. Run a regression of the logarithm of average hourly earnings, ln(AHE), on ln(Age), Female, and Bachelor. If Age increases from 25 to 26, how are earnings expected to change? If Age increases from 33 to 34, how are earnings expected to change?
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_c <- lm(log(ahe) ~ log(age) + female + bachelor, data = pset_data1)
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_c,
+title = "Exercise E8.2 c",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+This is a log-log specification. The coefficient on $ln(age)$ has the following interpretation: If age goes up by 1\%, earnings are predicted to go up by 0.75\%.  An increase from 25 to 26 constitutes a 4\% increase in age. So the associated increase in earnings is 3\% $(4 \cdot 0.75)$.
+An increase from 33 to 34 constitutes a 2.9% increase in age. So the associated increase in earnings is 2.2\% $(2.9 \cdot 0.75)$.
+$$
+\widehat{\Delta ln(earnings)} = 0.75 \cdot (ln(26)) - ln(25)) = 0.029
+$$
+$$
+\widehat{\Delta ln(earnings)} = 0.75 \cdot (ln(34)) - ln(33)) = 0.022
+$$
+\newpage
+
+## d. Run a regression of the logarithm of average hourly earnings, ln(AHE), on Age, Age2, Female, and Bachelor. If Age increases from 25 to 26, how are earnings expected to change? If Age increases from 33 to 34, how are earnings expected to change?
+
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_d <- lm(log(ahe) ~ age + I(age^2) + female + bachelor, data = pset_data1)
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_d,
+title = "Exercise E8.2 d",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+This is a quadratic specification for log average hourly earnings. 
+
+- \textbf{Case 1:} When age changes from 25 to 26:  The change in log average hourly earnings is given by:
+$$
+0.104 \cdot 26 - (0.001 \cdot (26^2)) - (0.104 \cdot 25 - (0.001 \cdot (25)^2))=0.053
+$$
+Note: $0.053$ is in units of log AHE. Earnings are therefore expected to go up by 5.3\% (approx).
+
+- \textbf{Case 2:} When age changes from 33 to 34: The change in log average hourly earnings is given by:
+$$
+0.104 \cdot 34 - (0.001 \cdot (34^2)) - (0.104 \cdot 33 - (0.001 \cdot (33^2))=0.037
+$$
+Note: $0.03$ is in units of log AHE. Earnings are therefore expected to go up by 3.7\% (approx)
+
+## e. Do you prefer the regression in (c) to the regression in (b)? Explain.
+
+Model (c) is a log-log specification and (b) is a log-linear specification. There are two ways to think about the answer to part (e). First is, how do you think about the relationship between earnings and age? Do you think that a unit change in $X$ leads to a constant percentage change in $Y$ or do you think that a one percent change in $X$ leads to a certain fixed percent change in $Y$.
+ 
+A second way to think about this is, since the $LHS$ is the same in both models (namely, log(AHE)), we pick the one with a higher R-squared. In this case, the adjusted R-squared is the same for both, I would put more weight to what is the right way to think about the relationship.
+
+## f. Do you prefer the regression in (d) to the regression in (b)? Explain.
+
+The regression in (d) is preferred over (b). (d) allows for a non-linear relationship between earnings and age, and given that the coefficient on $Age^{2}$ is significant (although, only at the 10\% level), we could conclude that there is indeed, a non-linear relationship between these two variables. 
+
+## g. Do you prefer the regression in (d) to the regression in (c)? Explain.
+
+Here we are comparing log log with quadratic specification for logY. Pick the one with higher R squared.
+
+## h. Plot the regression relation between Age and ln(AHE) from (b), (c), and (d) for males with a high school diploma. Describe the similarities and differences between the estimated regression functions. Would your answer change if you plotted the regression function for females with college degrees?
+
+In order to do this, we will use the `predict` function to estimate the $\widehat{ln(ahe)}$ from regressions (b), (c) and (d). In all three panels, we are plotting ln(ahe) against age. In (b), which is a log-linear model we therefore see that the line of best fit has same slope. In (c), which is a log-log model, the line of best fit has a curve to it (note if we had plotted log AHE against log age, this line would have a constant slope). In (d), as in (c), the line of best fit, has a curve to it and the curvature is more exaggerated. 
+
+
+```{r, eval=F, echo=T, message=FALSE, error=FALSE}
+# this generates the yhat from each of the regressions
+pset_data1$yhat_b <- predict(model_b)
+pset_data1$yhat_c <- predict(model_c)
+pset_data1$yhat_d <- predict(model_d)
+
+# dplyr makes it easy to use IF conditions. Note the %>% or "pipe" operator.
+library(dplyr)
+pset_data1 %>% 
+  filter(female == 0 & bachelor == 0) %>%
+  ggplot() + geom_smooth(aes(age, yhat_b))
+
+pset_data1 %>% 
+  filter(female == 0 & bachelor == 0) %>%
+  ggplot() + geom_smooth(aes(age, yhat_c))
+
+pset_data1 %>% 
+  filter(female == 0 & bachelor == 0) %>%
+  ggplot() + geom_smooth(aes(age, yhat_d))
+
+pset_data1 %>% 
+  filter(female == 1 & bachelor == 1) %>%
+  ggplot() + geom_smooth(aes(age, yhat_b))
+
+pset_data1 %>% 
+  filter(female == 1 & bachelor == 1) %>%
+  ggplot() + geom_smooth(aes(age, yhat_c))
+
+pset_data1 %>% 
+  filter(female == 1 & bachelor == 1) %>%
+  ggplot() + geom_smooth(aes(age, yhat_d))
+```
+```{=tex}
+\begin{figure}[h]
+\centering
+\caption{Males with Highschool Diploma}
+\minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{linear.pdf}
+  \subcaption{ln(ahe), linear in age}
+\endminipage\hfill
+\minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{lnln.pdf}
+  \subcaption{ln(ahe), ln(age)}
+\endminipage\hfill
+\minipage{0.32\textwidth}%
+  \includegraphics[width=\linewidth]{lnquad.pdf}
+  \subcaption{ln(ahe), quadratic age}
+\endminipage
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\caption{Females with College Degree}
+\minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{linearf.pdf}
+  \subcaption{ln(ahe), linear in age}
+\endminipage\hfill
+\minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{lnlnf.pdf}
+  \subcaption{ln(ahe), ln(age)}
+\endminipage\hfill
+\minipage{0.32\textwidth}%
+  \includegraphics[width=\linewidth]{lnquadf.pdf}
+  \subcaption{ln(ahe), quadratic age}
+\endminipage
+\end{figure}
+
+```
+\newpage
+
+### h.i. Run a regression of ln(AHE) on Age, Age$^2$, Female, Bachelor, and the interaction term Female $\times$ Bachelor. What does the coefficient on the interaction term measure? Alexis is a 30-year-old female with a bachelor’s degree. What does the regression predict for her value of ln(AHE)? Jane is a 30-year-old female with a high school degree. What does the regression predict for her value of ln(AHE)? What is the predicted difference between Alexis’s and Jane’s earnings? Bob is a 30-year-old male with a bachelor’s degree. What does the regression predict for his value of ln(AHE)? Jim is a 30-year-old male with a high school degree. What does the regression predict for his value of ln(AHE)? What is the predicted difference between Bob’s and Jim’s earnings?
+
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_1 <- lm(log(ahe) ~ age + 
+                         I(age^2) + female + bachelor + 
+                         I(female * bachelor), data = pset_data1)
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_1,
+title = "Exercise E8.2 h.i",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+The coefficient on the interaction term measures the CHANGE in earnings PREMIUM for having a Bachelor's degree (relative to being only a high school graduate) that females experience compared to the bachelor's premium that males experience. In other words, it shows how the earnings value of having a Bachelor's degree differs for males and females. 
+
+- Alexis: $0.804 - 0.242 \cdot1 + (0.104 \cdot 30) - (0.001 \cdot (30^{2})) + 0.400 \cdot 1 + 0.09 \cdot 1 = 3.272$
+
+- Jane: $0.804- 0.242 \cdot 1 + (0.104 \cdot 30) - (0.001 \cdot (30^{2})) =  2.782$
+  
+The difference is: $3.272- 2.782= 0.490$. The units are in ln(ahe). In other words, the difference in earnings between Alexis (bachelor's graduate) and Jane (high school graduate), is approximately, 49\%. 
+
+
+- Bob: $0.804 + 0.104 \cdot 30 - (0.001 \cdot (30^{2})) + 0.400 \cdot 1 = 3.424$
+
+- Jim: $0.804 + 0.104 \cdot 30 - (0.001 \cdot (30^{2})) = 3.024$
+
+The difference is $3.424-3.024=0.400$. The units are in ln(AHE). In other words, the difference in earnings between Bob (Bachelor's degree) and Jim (high school graduate), is approximately, 40\%.
+
+Thus the Bachelors' premium for women is \textbf{9 PERCENTAGE POINTS} higher, compared to men.
+
+## j. Is the effect of Age on earnings different for men than for women? Specify and estimate a regression that you can use to answer this question.
+
+We will answer this question using the following regression.
+$$
+ln(Y_i) = \alpha + \beta_1 Age_i + \beta_2 Age_i^2 + \beta_3 Female_i + \beta_4(Age \times Female)_i +\beta_5(Age^2 \times Female)_i + \varepsilon_i
+$$
+The results are reported in table 6, column (1). The coefficients on the interaction terms, i.e $\beta_4$, $\beta_5$ are both significant, indicating that there association between earning and age is, indeed different for men and women. The test of joint significance also confirms this. 
+```{r, eval=F, echo=TRUE, results='asis'}
+model_2 <- lm(log(ahe) ~ age + 
+                         I(age^2) + 
+                         female + 
+                         I(age * female) + 
+                         I(age^2 * female), 
+                         data = pset_data1)
+```
+
+Test of joint significance for $H_0:\beta_4=\beta_5=0, H_1:\beta_4\neq 0 \ \text{and/or} \ \beta_5\neq0$:
+```{r, eval=TRUE, echo=FALSE}
+model_2 <- lm(log(ahe) ~ age + 
+                         I(age^2) + 
+                         female + 
+                         I(age * female) + 
+                         I(age^2 * female), 
+                         data = pset_data1)
+```
+```{r, eval=TRUE, echo=TRUE, message=FALSE, error=F}
+library(car)
+linearHypothesis(model_2, c("I(age * female)=0", 
+                            "I(age^2 * female) = 0"))
+```
+\newpage
+## k. Is the effect of Age on earnings different for high school graduates than for college graduates? Specify and estimate a regression that you can use to answer this question.
+
+We will answer this question using the following regression.
+$$
+ln(Y_i) = \alpha + \beta_1 Age_i + \beta_2 Age_i^2 + \beta_3 Bachelor_i + \beta_4(Age \times Bachelor)_i +\beta_5(Age^2 \times Bachelor)_i + \varepsilon_i
+$$
+The results are in table 6, column (2). Here, the coefficients on the interaction terms, i.e $\beta_4$, $\beta_5$ are both insignificant, indicating there there are no differences in the association between earnings and age, between workers who are college graduates, and those who are not. The test of joint significance as in (j) also shows that these there is indeed no difference.
+```{r, eval=T, echo=TRUE, results='asis'}
+
+model_3 <- lm(log(ahe) ~ age + 
+                         I(age^2) + 
+                         bachelor + 
+                         I(age * bachelor) + 
+                         I(age^2 * bachelor), 
+                         data = pset_data1)
+
+```
+```{r, eval=TRUE, echo=TRUE}
+linearHypothesis(model_3, c("I(age * bachelor)=0", 
+                            "I(age^2 * bachelor) = 0"))
+
+```
+```{r, eval=T, echo=F, results='asis'}
+model_2 <- lm(log(ahe) ~ age + I(age^2) + female + 
+                         I(age * female) + I(age^2 * female), 
+                         data = pset_data1)
+model_3 <- lm(log(ahe) ~ age + I(age^2) + bachelor + 
+                         I(age * bachelor) + I(age^2 * bachelor), 
+                          data = pset_data1)
+stargazer(model_2, model_3,
+title = "Exercise E8.2 k and j", header = F
+, df = F, digits = 3)
+```
+
+\newpage
+
+## l. After running all these regressions (and any others that you want to run), summarize the effect of age on earnings for young workers.
+
+Based on the regressions we ran, we can come to     the following conclusion. There is strong evidence that the association between log earnings and age is increasing and concave\footnote{For example, $Earnings = f(Age)$, with $f'(Age) >0$, $f''(Age) < 0$}. There is some evidence (based on the p-values of the interaction terms in table 6, column 1) that this association is more pronounced and is higher in magnitude, for female workers. We cannot conclusively say that this association is different for workers with and without a college degree.

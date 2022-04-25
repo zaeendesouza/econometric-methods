@@ -1,0 +1,18 @@
+\contentsline {section}{Background: Empirical Exercise 11.1}{3}{section*.2}%
+\contentsline {section}{Reading guide}{3}{section*.3}%
+\contentsline {section}{Loading the data and libraries}{4}{section*.4}%
+\contentsline {section}{E11.1 Problem Context}{4}{section*.5}%
+\contentsline {section}{Exercise E11.1}{5}{section*.6}%
+\contentsline {subsection}{a. What fraction of workers in the sample were employed in April 2009? Use your answer to compute a 95\% confidence interval for the probability that a worker was employed in April 2009, conditional on being employed in April 2008.}{5}{section*.7}%
+\contentsline {subsubsection}{b. Regress Employed on Age and Age\(^{2}\), using a linear probability model.}{6}{section*.8}%
+\contentsline {subsubsection}{b i. Based on this regression, was age a statistically significant determinant of employment in April 2009?}{6}{section*.9}%
+\contentsline {subsubsection}{b ii. Is there evidence of a nonlinear effect of age on the probability of being employed?}{7}{section*.10}%
+\contentsline {subsubsection}{b iii. Compute the predicted probability of employment for a 20-yearold worker, a 40-year-old worker, and a 60-year-old worker.}{7}{section*.11}%
+\contentsline {subsection}{c.\nobreakspace {}Repeat (b) using a probit regression.}{8}{section*.12}%
+\contentsline {subsection}{d.\nobreakspace {}Repeat (b) using a logit regression.}{9}{section*.13}%
+\contentsline {subsection}{e. Are there important differences in your answers to (b)--(d)? Explain.}{10}{section*.14}%
+\contentsline {subsection}{f.\nobreakspace {}The data set includes variables measuring the workers' educational attainment,sex, race, marital status,region of the country, and weekly earnings in April 2008.}{10}{section*.15}%
+\contentsline {subsubsection}{f i. Construct a table like Table 11.2 to investigate whether the conclusions on the effect of age on employment from (b)--(d) are affected by omitted variable bias.}{10}{section*.16}%
+\contentsline {subsubsection}{f ii. Use the regressions in your table to discuss the characteristics of workers who were hurt most by the Great Recession.}{10}{section*.17}%
+\contentsline {subsection}{g. The results in (a)--(f) were based on the probability of employment. Workers who are not employed can either be (i) unemployed or (ii) out the labor force. Do the conclusions you reached in (a)--(f) also hold for workers who became unemployed? (\textit {Hint: Use the binary variable Unemployed instead of Employed.})}{12}{section*.18}%
+\contentsline {subsection}{h. These results have covered employment transitions during the Great Recession, but what about transitions during normal times? On the textbook website, you will find the data file Employment\_06\_07, which measures the same variables but for the years 2006--2007. Analyze these data and comment on the differences in employment transitions during recessions and normal times.}{14}{section*.19}%

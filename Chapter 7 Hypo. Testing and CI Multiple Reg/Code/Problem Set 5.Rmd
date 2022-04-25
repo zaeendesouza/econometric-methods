@@ -1,0 +1,227 @@
+---
+title: | 
+  |  \huge Econometric Methods:
+  |  Solutions to Empirical Exercise 7.1
+  |  Chapter 7: Hypothesis Tests and Confidence Intervals in Multiple Regression 
+  |  Stock \& Watson, 3$^{rd}$ Edition
+author: 
+- \Large Zaeen de Souza\footnote{}
+- \Large  Deepti Goel\footnote{\footnotesize Solution key prepared jointly by Zaeen and Deepti. R code and presentation in Rmarkdown by Zaeen.}
+date: | 
+  |
+  | Azim Premji University
+  | `r format(Sys.time(), '%d %B %Y')`
+output: pdf_document
+latex_engine: pdflatex
+fontsize: 11pt
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{amsmath}
+- \usepackage{dcolumn}
+- \usepackage{lscape}
+- \usepackage{xcolor}
+- \usepackage{mathpazo}
+- \usepackage{domitian}
+urlcolor: blue
+linkcolor: blue
+---
+
+```{r setup, include=FALSE}
+
+
+# in case these are not installed - uncomment and then run.
+# install.packages("readxl")
+# install.packages("ggplot2")
+
+# Loading excel files
+library(readxl)
+
+library(stargazer)
+# Making graphs
+library(ggplot2) 
+
+# Setting working directory
+setwd("C:/Users/admin/cse Dropbox/Zaeen de Souza/Files From Deepti/Problem Sets - Latex, Code, Rmd/econometric-methods/Chapters/Chapter 7 Hypo. Testing and CI Multiple Reg/Dataset")
+
+# Loading the data as 'pset_data'
+pset_data <- read_excel("birthweight_smoking.xlsx")
+```
+\newpage
+\tableofcontents
+\newpage
+
+# Background: Empirical Exercise 7.1
+
+These are the solutions to **E7.1** from **Chapter 7** of \textit{Introduction to Econometrics (Updated Third edition)} by Stock \& Watson. You should have the following on your computer in order to check answers/run the code and follow the questions in this assignment:
+
+-   An updated version of `R` and `Rstudio`.
+-   The following packages installed: 
+    - `ggplot2`
+    - `readxl`
+    - `stargazer`
+-   The dataset called `height_and_earnings`.
+-   The data description pdf to understand the variables being used.
+
+# Reading guide
+All the code needed to complete the assignments is within this document. R code will be in a grey box and will look like this:
+```{r, eval=F, echo=T}
+summary(iris)
+```
+
+And all R output i.e what R shows you once you run some code, will have `#` signs next to it, and will look like this:
+
+```{r, eval=T, echo=F}
+summary(iris$Sepal.Length)
+```
+As far as possible these guides will show the \textbf{exact output} that comes from running code in `R`, and at times will use formatted tables made in latex. The results themselves, will be identical. Some things to note, that might make output look different accross different computers:
+
+- R reports things like p-values using scientific notation, but some computers report the numbers with many trailing zeros.
+
+- If you have an old version of `R` or `Rstudio` it is highly recommended that you update it using the following code:
+
+```{r, eval=F, echo=TRUE}
+# Use this to update R from within RStudio
+install.packages("installr")
+library(installr)
+# This last command, will open up a download prompt; choose yes/no accordingly.
+updateR()
+```
+
+For updating `Rstudio`, un-install your version of `RStudio`, and download a fresh version from the `RStudio` website.
+\newpage
+
+# Loading the data and libraries
+
+The following code sets the working directory to the folder where you have downloaded the data, loads the libraries needed fo the assignment and loads the excel dataset.
+
+```{r, eval=F, echo=TRUE}
+# Loading excel files
+library(readxl)
+# Making graphs
+library(ggplot2) 
+
+
+# Setting working directory - this is unique to your computer
+setwd("~Zaeen de Souza/Chapter 5 Hypo. Testing and CI Single Reg")
+
+# Loading the data as 'pset_data'
+pset_data <- read_excel("Earnings_and_Height.xlsx")
+```
+
+# E7.1 Problem Context
+
+On the text website, www.pearsonglobaleditions.com/Stock_Watson, you will find the data file Birthweight_Smoking, which contains data for a random sample of babies born in Pennsylvania in 1989. The data include the baby’s birth weight together with various characteristics of the mother, including whether she smoked during the pregnancy. A detailed description is given in Birthweight_Smoking_Description, also available on the website. In this exercise you will investigate the relationship between birth
+weight and smoking during pregnancy.
+\newpage
+
+# Exercise E7.1
+Use the Birthweight_Smoking data set introduced in Empirical Exercise E5.3 to answer the following
+questions. To begin, run three regressions:
+
+- (1) Birthweight on smoker
+- (2) Birthhweight on smoker, alcohol, and nprevist
+- (3) Birthweight on smoker, alcohol, nprevist, and unmarried
+
+Running the three regressions in R (And using the table code from the last problem set
+(problem-set-4), we have:
+
+```{r, eval=TRUE, echo=TRUE, results='asis'}
+model_1 <- lm(birthweight ~ smoker, data = pset_data)
+model_2 <- lm(birthweight ~ smoker + alcohol + nprevist, data = pset_data)
+model_3 <- lm(birthweight ~ smoker + alcohol + nprevist + unmarried, data = pset_data)
+stargazer(model_1, model_2, model_3,
+title = "Exercise E7.1",
+header = F,
+font.size = "small",
+df = F,
+digits = 3)
+```
+
+\newpage
+
+# a. What is the value of the estimated effect of smoking on birth weight in each of the regressions? 
+
+Table 3 shows the estimated coefficients from each of the three regressions. In column 1, the
+estimated effect of mothers smoking on child’s birthweight is -253.22, which implies that the
+children of mothers who smoked, were on average, -253.22 grams lighter than the children of
+mothers who didn’t smoke. In column 2, where we introduce some controls, this coefficient is
+smaller in magnitude, and is -217.58. In column 3 with still more controls, we see that the
+coefficient is substantially smaller in magnitude, at around -175.377.
+
+# b. Construct a 95% confidence interval for the effect of smoking on birth weight, using each of the regressions.
+
+Using R code, we have:
+```{r, eval=TRUE, echo=TRUE}
+confint.lm(model_1, "smoker")
+confint.lm(model_2, "smoker")
+confint.lm(model_3, "smoker")
+```
+
+# c. Does the coefficient on Smoker in regression (1) suffer from omitted variable bias? Explain.
+
+Yes it does. Recall, that omitted variable bias occurs when there is some variable that is correlated
+with both our outcome of interest (birthweight), as well as our regressor of interest (smoker). In
+this case, alcohol, unmarried and number of pre-natal care visits are all potential controls, and as
+such, regression 1 suffers from omitted variable bias.
+
+# d. Does the coefficient on Smoker in regression (2) suffer from omitted variable bias? Explain.
+
+Yes, regression 2 suffers from it as well. Marriage status can determine birthweight, if we assume
+that unmarried mothers are possibly younger, and on average, are less prepared for childbirth.
+It is also likely to be correlated with smoking status via prevailing social norms.
+
+
+# e. Consider the coefficient on Unmarried in regression (3).
+
+## e i. Construct a 95% confidence interval for the coefficient.
+
+```{r, eval=TRUE, echo=TRUE}
+confint(model_3, "unmarried")
+```
+
+## e ii. Is the coefficient statistically significant? Explain.
+
+Based on the confidence interval, and assuming we are testing the hypothesis that $\beta_4=0$, we could conclude that it is significant since the interval doesn’t pass through 0.
+
+## e iii. Is the magnitude of the coefficient large? Explain.
+
+The coefficient is economically significant—on average, the children of unmarried mothers weighed 187 grams less than the children of married mothers, even after controlling for alcohol intake, number of pre-natalcase checks, and smoking habits. More intuitively, children of unmarried mothers weighed 5\% less than the average child of a non-smoking mother.
+
+
+## e iv. A family advocacy group notes that the large coefficient suggests that public policies that encourage marriage will lead, on average, to healthier babies. Do you agree? (Hint: Review the discussion of control variables in Section 7.5. Discuss some of the various factors that Unmarried may be controlling for and how this affects the interpretation of its coefficient.)
+
+The advocacy group is jumping to conclusions. Unmarried mother could be a stand in for other life style choices that affect birth weight of the mother such as teenage pregnancy, risky lifestyle choices, and low income. It could be that addressing these underlying issues may result in 'unmarried' status having no effect on birth weight of its own. 
+
+\newpage 
+
+# f. Consider the various other control variables in the data set. Which do you think should be included in the regression? Using a table like Table 7.1, examine the robustness of the confidence interval you constructed in (b). What is a reasonable 95% confidence interval for the effect of smoking on birth weight?
+
+
+In order to examine this, we could estimate the following linear model using OLS,
+$$
+Y_{i} =\alpha + \beta_{1}Smoker_i + \beta_{2}nprevisit_i + \beta_{3}Alcohol_i + \beta_{4}Age_i + \beta_{5}Edu_i + \beta_{6}Unmarried_i + \varepsilon_i
+$$
+Table 2 shows the result of this regression—covariates are added one at a time.
+
+```{r, eval=TRUE, echo=TRUE, tidy}
+model_1 <- lm(birthweight ~ smoker, data = pset_data)
+model_2 <- lm(birthweight ~ smoker + nprevist, data = pset_data)
+model_3 <- lm(birthweight ~ smoker + nprevist + alcohol, data = pset_data)
+model_4 <- lm(birthweight ~ smoker + nprevist + alcohol + age, data = pset_data)
+model_5 <- lm(birthweight ~ smoker + nprevist + alcohol + age + educ, data = pset_data)
+model_6 <- lm(birthweight ~ smoker + nprevist + alcohol + age + educ + unmarried, data = pset_data)
+```
+A reasonable interval for this correlation would be based on the regression in column 6, which
+included a full set of controls. The interval is given by -
+```{r, eval=TRUE, echo=TRUE}
+confint(model_6, "smoker")
+```
+
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+stargazer(model_1, model_2, model_3, model_4, model_5, model_6,
+          title = "Exercise E7.1",
+          font.size = "small",
+          header = F,
+          df = F,
+          digits = 3)
+```

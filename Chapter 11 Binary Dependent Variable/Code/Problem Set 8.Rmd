@@ -1,0 +1,528 @@
+---
+title: |
+  |  \huge Econometric Methods:
+  |  Solutions to Empirical Exercise 11.1
+  |  Chapter 11: Binary Dependent Variables
+  |  Stock \& Watson, 3$^{rd}$ Edition
+author: 
+- \Large Zaeen de Souza\footnote{}
+- \Large  Deepti Goel\footnote{\footnotesize Solution key prepared jointly by Zaeen and Deepti. R code and presentation in Rmarkdown by Zaeen.}
+date: | 
+  |
+  | Azim Premji University
+  | `r format(Sys.time(), '%d %B %Y')`
+output: pdf_document
+latex_engine: pdflatex
+fontsize: 11pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{mathpazo}
+  - \usepackage{domitian}
+  - \usepackage{amsmath}
+  - \usepackage{dcolumn}
+  - \usepackage{lscape}
+  - \usepackage{xcolor}
+urlcolor: blue
+linkcolor: blue
+---
+
+```{r setup, include=FALSE}
+# in case these are not installed - uncomment and then run.
+# install.packages("readxl")
+# install.packages("ggplot2")
+options(scipen=3)
+# Loading excel files
+library(readxl)
+library(fixest)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(stargazer)
+library(patchwork)
+my_theme <- function(base_size = 12,
+                     base_family = "") {
+  theme_minimal(base_size = base_size,
+                base_family = base_family) %+replace%
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y  =  element_line(
+        colour = "#c9c0b7",
+        linetype = "dotted",
+        size = 0.5),
+      axis.ticks = element_line(size = .5, colour = "#c9c0b7"),
+      axis.ticks.x = element_blank(),
+      axis.line = element_line(
+        size = 0.5,
+        colour = "#c9c0b7",
+        linetype = "solid"),
+      axis.line.y = element_blank(),
+      axis.text.y = element_text(colour = "black", 
+                                 margin = margin(r = 2), 
+                                 hjust = 1),
+      axis.text.x = element_text(colour = "black"),
+      legend.title = element_blank(),
+      complete = TRUE)
+}
+
+theme_set(my_theme(base_size = 15))
+mypink <- "#e95984"
+mypurple <- "#b649ff"
+cseblue <- "#16926d"
+
+# Setting working directory
+setwd("C:/Users/admin/cse Dropbox/Zaeen de Souza/Files From Deepti/Problem Sets - Latex, Code, Rmd/econometric-methods/Chapters/Chapter 11 Binary Dependent Variable/Dataset")
+
+# Loading the data as 'pset_data'
+pset_data1 <- read_excel("employment_06_07.xlsx")
+pset_data2 <- read_excel("employment_08_09.xlsx")
+
+pset_data1$Black <- ifelse(pset_data1$race==2, 1,0)
+pset_data1$age_sq <- pset_data1$age^2
+
+
+pset_data2$age_sq <- pset_data2$age^2
+
+
+
+# latex output - table editing for etable()
+set_rules = function(x, heavy, light){
+  # x: the character vector returned by etable
+  
+  tex2add = ""
+  if(!missing(heavy)){
+    tex2add = paste0("\\setlength\\heavyrulewidth{", heavy, "}\n")
+  }
+  if(!missing(light)){
+    tex2add = paste0(tex2add, "\\setlength\\lightrulewidth{", light, "}\n")
+  }
+  
+  if(nchar(tex2add) > 0){
+    x[x == "%start:tab\n"] = tex2add
+  }
+  
+  x
+}
+
+
+# fixest dictionry for table labels in for etable()
+setFixest_dict(c(employed = "Employed", 
+                 unemployed = "Unemployed",
+                 age = "Age",
+                 age_sq = "Age$^{2}$",
+                 female = "Female",
+                 married = "Married",
+                 race = "Race",
+                 union = "Union Member",
+                 ne_states = "North-East State",
+                 so_states = "Southern State",
+                 ce_states = "Central State",
+                 we_states = "Western State",
+                 private = "Private Firm",
+                 government = "Govt. Firm",
+                 self = "Self-Employed",
+                 educ_lths = "Below High School",
+                 educ_hs=  "High School",
+                 educ_somecol = "Some College",
+                 educ_aa = "Assoc. Degree",
+                 educ_bac = "BA/BS Degree",
+                 edu_adv = "Adv. Degree",
+                 earnke = "Weekly Earnings"))
+
+# for etable() styling
+ setFixest_etable(style.tex = style.tex(main = "base", 
+                                        depvar.title = "",
+                                        model.title = "",
+                                        var.title = "\\midrule", 
+                                        yesNo = "$\\checkmark$", 
+                                        fixef.title = "\\midrule",
+                                        fixef.suffix = " Fixed Effects",
+                                        stats.title = "\\midrule"))
+
+```
+
+```{=tex}
+\newpage
+\tableofcontents
+\newpage
+```
+# Background: Empirical Exercise 11.1
+
+These are the solutions to **E11.1** from **Chapter 11** of
+\textit{Introduction to Econometrics (Updated Third edition)} by Stock &
+Watson. You should have the following on your computer in order to check
+answers/run the code and follow the questions in this assignment:
+
+-   An updated version of `R` and `Rstudio`.
+
+-   The following packages installed:
+
+    -   `ggplot2`
+    -   `readxl`
+    -   `fixest`
+
+-   The datasets called `employment_06_07.xlsx`, `employment_08_09.xlsx`
+
+-   The data description pdf to understand the variables being used.
+
+# Reading guide
+
+All the code needed to complete the assignments is within this document.
+R code will be in a grey box and will look like this:
+
+```{r, eval=F, echo=T}
+summary(iris)
+```
+
+And all R output i.e what R shows you once you run some code, will have
+`#` signs next to it, and will look like this:
+
+```{r, eval=T, echo=F}
+summary(iris$Sepal.Length)
+```
+
+As far as possible these guides will show the \textbf{exact output} that
+comes from running code in `R`, and at times will use formatted tables
+made in latex. The results themselves, will be identical. Some things to
+note, that might make output look different accross different computers:
+
+-   R reports things like p-values using scientific notation, but some
+    computers report the numbers with many trailing zeros.
+
+-   If you have an old version of `R` or `Rstudio` it is highly
+    recommended that you update it using the following code:
+
+```{r, eval=F, echo=TRUE}
+# Use this to update R from within RStudio
+install.packages("installr")
+library(installr)
+# This last command, will open up a download prompt; choose yes/no accordingly.
+updateR()
+```
+
+For updating `Rstudio`, un-install your version of `RStudio`, and
+download a fresh version from the `RStudio` website. \newpage
+
+# Loading the data and libraries
+
+The following code sets the working directory to the folder where you
+have downloaded the data, loads the libraries needed fo the assignment
+and loads the excel dataset.
+
+```{r, eval=F, echo=TRUE}
+# Loading excel files
+library(fixest)
+library(readxl)
+library(ggplot2) 
+library(dplyr)
+
+# Setting working directory - this is unique to your computer
+setwd("~Zaeen de Souza/Chapter 11 Binary Dependent Variables")
+
+# Loading the data as 'pset_data'
+pset_data1 <- read_excel("employment_06_07.xlsx")
+pset_data2 <- read_excel("employment_08_09.xlsx")
+```
+
+# E11.1 Problem Context
+
+In April 2008 the unemployment rate in the United States stood at 5.0%. By April 2009 it had increased to 9.0%, and it had increased further, to 10.0%, by October 2009. Were some groups of workers more likely to lose their jobs than others during the Great Recession? For example, were young workers more likely to lose their jobs than middle-aged workers? What about workers with a college degree versus those without a degree, or women versus men? On the textbook website, www.pearsonglobaleditions.com/Stock_Watson, you will find the data file Employment_08_09, which contains \textbf{a random sample of 5440 workers who were surveyed in April 2008 and reported that they were employed full time}. A detailed descriptionis given in Employment_08_09_Description, available on the website. These workers were surveyed one year later, in April 2009, and asked about their employment status (employed, unemployed, or out of the labor force). The data set also includes various demographic measures for each individual. Use these data to answer the following questions.
+
+\newpage
+
+# Exercise E11.1
+
+## a. What fraction of workers in the sample were employed in April 2009? Use your answer to compute a 95% confidence interval for the probability that a worker was employed in April 2009, conditional on being employed in April 2008.
+
+We will answer this by first writing our own function to estimate this fraction and construct the confidence interval and then we will use regression to do the same.
+
+```{r, eval=TRUE, echo=TRUE}
+my_estimator <- function(X = x, Z = z) {
+  sample_mean <- mean(X, na.rm = T)
+  sample_n <- length(X)
+  sample_sd <- sd(X, na.rm = T)
+  sample_se <- sample_sd / sqrt(sample_n)
+  degrees_freedom = sample_n - 1
+# the qt() function is an inverse cumulative density function for a t-distribution.
+# it takes as its arguments/inputs a quantile (Z/2=0.05/2) and dof (sample size -1)
+# and returns the corresponding t score value.
+  t_stat = qt(p = Z / 2, df = degrees_freedom)
+  margin_error <- t_stat * sample_se
+  lower_bound <- sample_mean - margin_error
+  upper_bound <- sample_mean + margin_error
+  cat("The probability is", 
+      round(sample_mean, 3), 
+      "\nThe 95% confidence interval is [",
+      round(upper_bound, 3), 
+      round(lower_bound, 3),
+      "]")
+}
+my_estimator(X = pset_data2$employed, Z = 0.05)
+```
+
+An easier way to do this is to regress $Employed$ on a constant, and then use the `confint()` function to get the 95% confidence interval. 
+```{r, eval=TRUE, echo=TRUE}
+round(confint(lm(employed ~ 1, data = pset_data2)),3)
+```
+This works because when you regress $Y$ on only a constant, the intercept is equal to $E[Y]$ if you run the regression in the population, and  $\bar Y$ (i.e. sample mean of $Y$), if you run it in a sample. This is always the case irrespective of whether $Y$ is binary or not.
+
+\newpage
+
+### b. Regress Employed on Age and Age$^{2}$, using a linear probability model.
+
+We will estimate the following LPM (Linear Probability Model) using OLS,
+
+$$
+Y_{i} = \alpha + \beta_1 Age_i + \beta_2 Age^{2}_{i} + \varepsilon_i
+$$
+Note, 
+
+$$
+Y_{i} =
+\begin{cases}
+1, & if \  \text{individual} \ i  \ \text{was employed in 2009} \\
+0, & if \  \text{individual} \ i  \ \text{was unemployed in 2009}
+\end{cases}
+$$
+```{r, eval=TRUE, echo=TRUE}
+model_1 <- feols(employed ~ age + age_sq, data = pset_data2, vcov = "HC1")
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_1, 
+       fitstat = ~ r2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 b",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
+
+
+### b i. Based on this regression, was age a statistically significant determinant of employment in April 2009?
+
+$Age$ is a significant predictor of employment status in April 2009 as the coefficients on both Age and Age squared are statistically significant at the 1 percent level. Because Age squared is also significant, the relationship between Employment and Age is not linear but non-linear. In fact since age squared is negative, it is concave (if age squared would have been positive, it would be convex). We can calculate the age at which the relationship between employment and age changes from being positive to negative as follows: 
+
+Set the partial derivative equal to 0,
+$$
+0.028 - 0.0003 \cdot 2 \cdot Age = 0  
+$$
+Solving,
+$$
+-0.0006Age = -0.028
+$$
+$$
+Age= \frac{0.028}{0.0006}=44.7
+$$
+
+The probability of being employed is increasing in Age until $44.7$ years, and then starts to decline.
+
+### b ii. Is there evidence of a nonlinear effect of age on the probability of being employed?
+
+The coefficient on $Age^2$, which is negative \textit{and} significant, indicates that there is some evidence that the relationship between $Age$ and employment status is indeed non-linear; specifically, it is increasing (as the first derivative of $\widehat Y$ w.r.t. age is positive) and concave (as second derivative is negative).
+
+### b iii. Compute the predicted probability of employment for a 20-yearold worker, a 40-year-old worker, and a 60-year-old worker.
+
+We need to calculate:
+
+1. $P(Y = 1 | Age = 20)$
+2. $P(Y = 1 | Age = 40)$
+3. $P(Y = 1 | Age = 60)$
+
+Using the coefficients and intercept from table 1, we have:
+
+```{r, eval=TRUE, echo=TRUE}
+b1 <- model_1$coefficients[2]
+b2 <- model_1$coefficients[3]
+employed_20_lpm <- 0.307 + (b1 * 20) + (b2 * (20^2))
+employed_40_lpm <- 0.307 + (b1 * 40) + (b2 * (40^2))
+employed_60_lpm <- 0.307 + (b1 * 60) + (b2 * (60^2))
+# 20 year old
+round(employed_20_lpm,3)
+# 40 year old
+round(employed_40_lpm,3)
+# 60 year old
+round(employed_60_lpm,3)
+```
+\newpage
+
+## c. Repeat (b) using a probit regression.
+
+We will estimate
+$$ 
+P(Y = 1 | Age, Age^2) = \Phi(\alpha + \beta_1 Age_{i} + \beta_2 Age^{2}_{i})
+$$
+Where $\Phi$ is a cumulative standard normal distribution function. The probit results are below, in table 2.
+```{r, eval=TRUE, echo=TRUE}
+model_2 <- feglm(employed ~ age + age_sq, data = pset_data2, family= binomial("probit"))
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_2, 
+       fitstat = ~ pr2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 c: Probit",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+The estimated coefficients have the same \textit{direction} as the LPM. After transforming them, we can see that they are \textit{qualitatively}, similar in size to the LPM coefficients.
+```{r, eval=TRUE, echo=TRUE}
+b1 <- model_2$coefficients[2]
+b2 <- model_2$coefficients[3]
+#pnorm is CDF of the normal distribution
+employed_20_pro <- pnorm(-1.26 + b1*20 + b2*20^2)
+employed_40_pro <- pnorm(-1.26 + b1*40 + b2*40^2)
+employed_60_pro <- pnorm(-1.26 + b1*60 + b2*60^2)
+round(employed_20_pro,3);round(employed_40_pro,3);round(employed_60_pro,3)
+```
+\newpage
+
+## d. Repeat (b) using a logit regression.
+
+We will estimate
+$$
+P(Y = 1 | Age, Age^2) = \frac{1}{1 + e^{-(\alpha + \beta_1Age_{i} + \beta_2 Age^{2}_{i})}}
+$$
+```{r, eval=TRUE, echo=TRUE}
+model_3 <- feglm(employed ~ age + age_sq, data = pset_data2, family= binomial("logit"))
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_3, 
+       fitstat = ~ pr2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 d: Logit",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+As can be seen, the estimated coefficients have the same direction as the LPM \textit{and} the Probit regressions. The estimates themselves are also similar.
+```{r, eval=TRUE, echo=TRUE}
+b1 <- model_3$coefficients[2]
+b2 <- model_3$coefficients[3]
+# plogis is the CDF of the logistic distribtion
+employed_20_lo <- plogis(-2.49 + b1*20 + b2*20^2)
+employed_40_lo <- plogis(-2.49 + b1*40 + b2*40^2)
+employed_60_lo <- plogis(-2.49 + b1*60 + b2*60^2)
+round(employed_20_lo,3)
+round(employed_40_lo,3)
+round(employed_60_lo,3)
+```
+
+## e. Are there important differences in your answers to (b)–(d)? Explain.
+
+For 40 and 60 year olds the predictions from all three models are very close, for 20 year olds also they are close but not as close. Thus, all three models give similar predictions for these ages. However, the limitation of the LPM is that for certain ages, it could give predictions less than 0 or more than 1.
+
+## f. The data set includes variables measuring the workers’ educational attainment,sex, race, marital status,region of the country, and weekly earnings in April 2008.
+
+### f i. Construct a table like Table 11.2 to investigate whether the conclusions on the effect of age on employment from (b)–(d) are affected by omitted variable bias.
+
+In table 4 we compare the results of the regression with controls. 
+
+```{r, eval=TRUE, echo=TRUE, warning=FALSE, error=FALSE}
+# making a dummy for race==black
+pset_data2$Black <- ifelse(pset_data2$race==2, 1,0)
+
+model_4 <- feols(employed ~ age + age_sq + 
+                   Black + female + 
+                   educ_lths + educ_hs + 
+                   educ_somecol+ educ_aa+ 
+                   educ_bac + married + log(earnwke) | 
+                   ne_states + so_states + ce_states, 
+                   data = pset_data2, vcov = "HC1")
+```
+We see that the associated between age and employment status is more or less, unchanged (the regression with no controls is in table 1). The squared term is significant as well, which suggests that the non-linear relationship between age and employment exists, even after adding additional covariates. The probability of being employed is increasing until 38 years (done by setting the partial derivative to 0 and solving the same way we did in \textbf{b.i}) and is decreasing after.
+```{r, eval=TRUE, echo=FALSE, results='asis', warning=FALSE, error=FALSE, message=FALSE}
+etable(model_4, 
+       fitstat = ~ r2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 f: LPM With Controls",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
+
+### f ii. Use the regressions in your table to discuss the characteristics of workers who were hurt most by the Great Recession.
+
+Younger workers, black workers, workers with below high school education and workers with lower earnings were less likely to be employed. In terms of magnitudes, workers with education less than high school were 7 percentage points less likely to be employed, compared to those with a advanced degree. Black workers were 3.7 percentage points less likely to be employed, compared to other workers. A one percent increase in earnings was associated with 0.0004 increase in probability of being employed or a 0.04 percentage point increase in the probability of being employed.
+
+\newpage
+
+## g. The results in (a)–(f) were based on the probability of employment. Workers who are not employed can either be (i) unemployed or (ii) out the labor force. Do the conclusions you reached in (a)–(f) also hold for workers who became unemployed? (\textit{Hint: Use the binary variable Unemployed instead of Employed.})
+
+Table 5 presents the linear probability model, where we have regressed unemployment (0/1 binary variable) on covariates. We interpret the second column of results here.
+The relationship between unemployment and age is convex (U shaped), with young workers and old workers more likely to be unemployed.
+
+
+Females are less likely to be unemployed compared to males (remember, out of labour force is also coded as 0, along with employed); females are 2.1 percentage points less likely to be unemployed compared to males. 
+
+Workers with education below highschool and only highschool are more likely to be unemployed compared to workers with an advanced degree; Below Highschool are 6.8 percentage points more likely to be unemployed compared to workers with an advanced degree, while those with a highschool degree are 3.3. percentage points more likely to be unemployed compared to those with advanced degrees.
+
+
+```{r, eval=TRUE, echo=T, warning=FALSE, error=FALSE, message=FALSE}
+model_5 <- feols(unemployed ~ age + age_sq, 
+                 data = pset_data2, vcov = "HC1")
+
+model_6 <- feols(unemployed ~ age + age_sq + 
+                            Black + female + 
+                            educ_lths + educ_hs + 
+                            educ_somecol+ educ_aa+ 
+                            educ_bac + married + log(earnwke) |
+                            ne_states + so_states + ce_states, 
+                 data = pset_data2, vcov = "HC1")
+```
+
+```{r, eval=TRUE, echo=FALSE, results='asis', warning=FALSE, error=FALSE, message=FALSE}
+etable(model_5, model_6, 
+       fitstat = ~ r2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 g: Unemployment - with and without controls (LPM)",
+       digits = 3, 
+       digits.stats = "r3", 
+       drop = c("Intercept"))
+```
+
+\newpage
+
+## h. These results have covered employment transitions during the Great Recession, but what about transitions during normal times? On the textbook website, you will find the data file Employment_06_07, which measures the same variables but for the years 2006–2007. Analyze these data and comment on the differences in employment transitions during recessions and normal times.
+
+During normal times (columns 1-2 in table 6), that the effect of age on employment status is similar as during recession (columns 3-4). The probability of employment is increasing until age 40, and is decreasing after (column 2, table 6), whereas during recession, it is increasing till age 38, and decreasing after. Workers with higher salaries are also more likely to be employed in both periods, with the coefficients similar in size---during normal times, a 1 percent increase in earnings is associated with a $0.052$ percentage point increase in the probability of being employed, while it is associated with a $0.04$ percentage point increase in the probability of being employed during a recession. During recessions workers with lower education are also less likely to be employed---workers with less than HS education are $7$ percentage points less likely to be employed as compared with those with an advanced degree. This is not significant during normal times.
+
+\textbf{Note:} The change in sample sized between columns in the table is explained by observations with MISSING or ZERO earnings. Missing observations are dropped because they are missing, but zero earnigns observations are dropped because $ln(0)$ is undefined.
+
+```{r, eval=TRUE, echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+model_7 <- feols(employed ~ age + age_sq | 
+                 ne_states + so_states + ce_states,
+                 data = pset_data1, vcov = "HC1")
+
+model_8 <- feols(employed ~ age + age_sq + 
+                            Black + female + 
+                            educ_lths + educ_hs + 
+                            educ_somecol+ educ_aa+ 
+                            educ_bac + married + log(earnwke) |
+                            ne_states + so_states + ce_states, 
+                 data = pset_data1, vcov = "HC1")
+
+model_9 <- feols(employed ~ age + age_sq |
+                 ne_states + so_states + ce_states, 
+                 data = pset_data2, vcov = "HC1")
+
+model_10 <- feols(employed ~ age + age_sq + 
+                            Black + female + 
+                            educ_lths + educ_hs + 
+                            educ_somecol+ educ_aa+ 
+                            educ_bac + married + log(earnwke) |
+                            ne_states + so_states + ce_states, 
+                 data = pset_data2, vcov = "HC1")
+```
+\clearpage
+```{r, eval=T, echo=F, results='asis'}
+etable(model_7, model_8, model_9, model_10,
+       fitstat = ~ r2 + n, 
+       tex = TRUE, 
+       title = "E.11.1 h: Employment Transitions: 2006 vs 2009 (LPM)",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"),
+       headers = list("2006"=2, "2009"=2))
+```

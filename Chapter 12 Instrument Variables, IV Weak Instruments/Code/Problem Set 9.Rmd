@@ -1,0 +1,315 @@
+---
+title: |
+  |  \huge Econometric Methods:
+  |  Solutions to Empirical Exercise 12.1
+  |  Chapter 12: Instrumental Variables Regression
+  |  Stock \& Watson, 3$^{rd}$ Edition
+author: 
+- \Large Zaeen de Souza\footnote{}
+- \Large  Deepti Goel\footnote{\footnotesize Solution key prepared jointly by Zaeen and Deepti. R code and presentation in Rmarkdown by Zaeen.}
+date: | 
+  |
+  | Azim Premji University
+  | `r format(Sys.time(), '%d %B %Y')`
+output: pdf_document
+latex_engine: pdflatex
+fontsize: 11pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{mathpazo}
+  - \usepackage{domitian}
+  - \usepackage{amsmath}
+  - \usepackage{dcolumn}
+  - \usepackage{lscape}
+  - \usepackage{xcolor}
+urlcolor: blue
+linkcolor: blue
+---
+
+```{r setup, include=FALSE}
+# in case these are not installed - uncomment and then run.
+# install.packages("readxl")
+# install.packages("ggplot2")
+rm(list=ls())
+options(scipen=3)
+# Loading excel files
+library(readxl)
+library(fixest)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(stargazer)
+library(patchwork)
+my_theme <- function(base_size = 12,
+                     base_family = "") {
+  theme_minimal(base_size = base_size,
+                base_family = base_family) %+replace%
+    theme(
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y  =  element_line(
+        colour = "#c9c0b7",
+        linetype = "dotted",
+        size = 0.5),
+      axis.ticks = element_line(size = .5, 
+                                colour = "#c9c0b7"),
+      axis.ticks.x = element_blank(),
+      axis.line = element_line(
+        size = 0.5,
+        colour = "#c9c0b7",
+        linetype = "solid"),
+      axis.line.y = element_blank(),
+      axis.text.y = element_text(colour = "black", 
+                                 margin = margin(r = 2), 
+                                 hjust = 1),
+      axis.text.x = element_text(colour = "black"),
+      legend.title = element_blank(),
+      complete = TRUE)
+}
+
+theme_set(my_theme(base_size = 15))
+mypink <- "#e95984"
+mypurple <- "#b649ff"
+cseblue <- "#16926d"
+
+# Setting working directory
+setwd("C:/Users/admin/cse Dropbox/Zaeen de Souza/Files From Deepti/Problem Sets - Latex, Code, Rmd/econometric-methods/Chapters/Chapter 12 Instrument Variables, IV Weak Instruments/Dataset")
+
+# Loading the data as 'pset_data'
+pset_data1 <- read_excel("fertility.xlsx")
+pset_data2 <- read_excel("WeakInstrument.xlsx")
+
+
+
+# fixest dictionry for table labels in for etable()
+setFixest_dict(c(morekids = "$>$ 2 Children",
+                 boy1st = "1st child male",
+                 boy2nd = "2nd child male",
+                 samesex = "Same Sex",
+                 agem1 = "Mothers Age (Years)",
+                 black = "Black",
+                 hispan = "Hispanic",
+                 othrace = "Other Race",
+                 weeksm1 = "Weeks Worked"))
+
+# for etable() styling
+setFixest_etable(style.tex = style.tex(main = "base", 
+                                       depvar.title = "",
+                                       model.title = "",
+                                       var.title = "\\midrule", 
+                                       yesNo = "$\\checkmark$", 
+                                       fixef.title = "\\midrule",
+                                       fixef.suffix = " Fixed Effects",
+                                       stats.title = "\\midrule"))
+
+```
+
+```{=tex}
+\newpage
+\tableofcontents
+\newpage
+```
+# Background: Empirical Exercise 11.1
+
+These are the solutions to **E12.1** from **Chapter 12** of
+\textit{Introduction to Econometrics (Updated Third edition)} by Stock &
+Watson. You should have the following on your computer in order to check
+answers/run the code and follow the questions in this assignment:
+
+-   An updated version of `R` and `Rstudio`.
+
+-   The following packages installed:
+
+    -   `ggplot2`
+    -   `readxl`
+    -   `fixest`
+
+-   The datasets called `fertility.xlsx`, `WeakInstrument.xlsx`
+
+-   The data description pdf to understand the variables being used.
+
+# Reading guide
+
+All the code needed to complete the assignments is within this document.
+R code will be in a grey box and will look like this:
+
+```{r, eval=F, echo=T}
+summary(iris)
+```
+
+And all R output i.e what R shows you once you run some code, will have
+`#` signs next to it, and will look like this:
+
+```{r, eval=T, echo=F}
+summary(iris$Sepal.Length)
+```
+
+As far as possible these guides will show the \textbf{exact output} that
+comes from running code in `R`, and at times will use formatted tables
+made in latex. The results themselves, will be identical. Some things to
+note, that might make output look different across different computers:
+
+-   R reports things like p-values using scientific notation, but some
+    computers report the numbers with many trailing zeros.
+
+-   If you have an old version of `R` or `Rstudio` it is highly
+    recommended that you update it using the following code:
+
+```{r, eval=F, echo=TRUE}
+# Use this to update R from within RStudio
+install.packages("installr")
+library(installr)
+# This last command, will open up a download prompt; choose yes/no accordingly.
+updateR()
+```
+
+For updating `Rstudio`, un-install your version of `RStudio`, and
+download a fresh version from the `RStudio` website. \newpage
+
+# Loading the data and libraries
+
+The following code sets the working directory to the folder where you
+have downloaded the data, loads the libraries needed fo the assignment
+and loads the excel dataset.
+
+```{r, eval=F, echo=TRUE}
+# Loading excel files
+library(fixest)
+library(readxl)
+library(ggplot2) 
+library(dplyr)
+
+# Setting working directory - this is unique to your computer
+setwd("~Zaeen de Souza/Chapter 12 Instrument Variables, IV Weak Instruments")
+
+# Loading the data as 'pset_data'
+pset_data1 <- read_excel("fertility.xlsx")
+pset_data2 <- read_excel("WeakInstrument.xlsx")
+```
+
+# E12.1 Problem Context
+
+How does fertility affect labor supply? That is, how much does a woman’s
+labor supply fall when she has an additional child? In this exercise
+you will estimate this effect using data for married women from the
+1980 U.S. Census.4 The data are available on the textbook website, www
+.pearsonglobaleditions.com/Stock_Watson, in the file Fertility and
+described in the file Fertility_Description. The data set contains information
+on married women aged 21–35 with two or more children.
+
+\newpage
+
+# Exercise E12.1
+
+# a. Regress weeks worked on the indicator variable morekids, using OLS. On average, do women with more than two children work less than women with two children? How much less?
+
+The results are in table 1. We see that on average, mothers who had $>2$ children, worked 5.39 weeks less than mothers who had $\leq2$ children.
+
+```{r, eval=TRUE, echo=TRUE}
+model_1 <- feols(weeksm1 ~ morekids, data = pset_data1, vcov = "HC1")
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_1, 
+       fitstat = ~ r2 + n + f, 
+       tex = TRUE, 
+       title = "E.12.1 a",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
+# b. Explain why the OLS regression estimated in (a) is inappropriate for estimating the causal effect of fertility (morekids) on labor supply (weeksworked).
+
+The estimate of $\beta_1$, i,e $\widehat\beta_1$ is a biased estimate of the effect of having more kids on mother's work time for at least two reasons.  First, there are omitted variables that are correlated with fertility decisions and weeks worked. Woman's education is one such variable: more educated mothers choose to have fewer children and may also choose to work more (or less). Second, there could be reverse causality. Women who work more may choose to have fewer children. For both these reasons $\widehat\beta_1$ is a biased estimate.
+
+\newpage
+
+# c. The data set contains the variable samesex, which is equal to 1 if the first two children are of the same sex (boy–boy or girl–girl) and equal to 0 otherwise. Are couples whose first two children are of the same sex more likely to have a third child? Is the effect large? Is it statistically significant?
+
+On average, mothers whose first two children were of the same sex, were 6.8 percentage points more likely to have > 2 children compared to mothers with first two children of different gender. The result is significant at 1 percent level. The coefficient value of .068 is large as mothers with first two children of different sex have only a $34.6$ percent chance of having more than two kids ($0.068$ is 20% of $0.346$).
+
+```{r, eval=TRUE, echo=TRUE}
+model_2 <- feols(morekids ~ samesex, data = pset_data1, vcov = "HC1")
+```
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_2, 
+       fitstat = ~ r2 + n + f,
+       tex = TRUE, 
+       title = "E.12.1 c",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
+# d. Explain why samesex is a valid instrument for the instrumental variable regression of weeksworked on morekids.
+
+For an instrument to be valid it need to satisfy two conditions.
+
+1. Relevance: i.e $Cov(Z_{i}, X_{i})\neq 0$ 
+2. Exogeneity: i.e $Cov(Z_{i}, \varepsilon_{i})=0$ 
+
+We can see from table 2 that the first condition is met---mothers whose two first children are of the same sex, are significantly more likely to have $> 2$ children. The second condition cannot be tested directly, however it is plausible, in this setting (i.e the US) that the sex of the two firstborn children, only affects woman's labour supply via its effect on number of children.
+
+# e. Is samesex a weak instrument?
+
+No, it is not. As can be seen in table 2, the first-stage F-statistic is $1,237.219$ (table 2). As a general "rule of thumb", the F-stat of the first stage should be $>10$ (Chapter 12, page 492, S&W). Here, the F-statistic is substantially larger.
+
+# f. Estimate the regression of weeksworked on morekids, using samesex as an instrument. How large is the fertility effect on labor supply?
+
+We will estimate the following regression:
+
+\begin{equation}
+X_{i} = \alpha_1 + \beta_{1} Z_{i} + \varepsilon_{i}
+\end{equation}
+\begin{equation}
+Y_{i} = \alpha_2 + \beta_{1} \widehat X_{i} + \varepsilon_{i}
+\end{equation}
+
+Where $X$ is the endogenous variable that takes the value 1 if mother $i$ had more than two children, $Z$ is the IV for whether or not mother $i$ has two first born children of the same sex, and $Y$ is her labour supply measured in weeks worked in 1979.
+
+The IV results are in table 3. Column 1 shows the OLS estimate whereas column 3, shows the IV estimate. The IV estimate is larger than the OLS estimate---for mothers whose fertility decisions were driven by exogenous variation in the sex of their first two children, having $> 2$ children reduced their labour supply by 6.3 weeks.
+
+```{r, eval=TRUE, echo=TRUE}
+# syntax: Y ~ controls | endogenous var ~ IV
+# we have no controls, so we just add a constant
+IV <- feols(weeksm1 ~ 1 | morekids ~ samesex, pset_data1, vcov = "HC1")
+```
+
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(model_1, IV,headers = list("OLS"=1, "IV First-Stage" = 1, "IV" = 1),
+       fitstat = ~ r2 + n + f, 
+       tex = TRUE, 
+       stage = 1:2,
+       title = "E.12.1 f",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
+\newpage
+# g. Do the results change when you include the variables agem1, black, hispan, and othrace in the labor supply regression (treating these variable as exogenous)? Explain why or why not.
+
+The results of the $2SLS$ are in table 4. The estimates do change slightly, however, the change is not large. These results suggest that the covariates are not substantially correlated with our IV. This is also evident from the first-stage results of the 2SLS, which are in column (3) table 4---the coefficient is unchanged. The covariates can be used to be make the IV seem plausibly more exogenous.
+
+```{r, eval=TRUE, echo=TRUE}
+IV2 <- feols(weeksm1 ~ agem1 + black + 
+                       hispan + othrace | 
+             morekids ~ samesex, 
+             pset_data1, vcov = "HC1")
+```
+
+```{r, eval=TRUE, echo=FALSE, results='asis'}
+etable(IV, IV2,
+       fitstat = ~ r2 + n + f, 
+       headers = list("First-Stage (IV)" = 1, 
+                      "IV" = 1, 
+                      "First-Stage (2SLS)" = 1, 
+                      "2SLS" = 1),
+       tex = TRUE, 
+       stage = 1:2,
+       title = "E.12.1 g",
+       digits = 3, 
+       digits.stats = "r3", 
+       order = c("!Inter"))
+```
+
